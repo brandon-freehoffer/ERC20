@@ -8,7 +8,6 @@ import (
 
 	"github.com/brandon-freehoffer/ERC20/src/api"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
@@ -21,7 +20,7 @@ func main() {
 
 	}
 
-	privateKey, err := crypto.HexToECDSA("a4bd30c7e9615ac2cd35079448dcaada33ce2aff528e3766c4bc830f96dad865")
+	privateKey, err := crypto.HexToECDSA("70e8a81413b2b7082eea34ffd227f42bb3e2dadc4ce90a8e82f06d716d103fc9")
 	if err != nil {
 		fmt.Println(err)
 		panic(err)
@@ -53,7 +52,6 @@ func main() {
 	auth.Value = big.NewInt(0)       // in wei
 	auth.GasLimit = uint64(30000000) // in units
 	auth.GasPrice = big.NewInt(875625000)
-	address := common.HexToAddress("15Cd4F8dA28398Ee6E1f20f606EE40eE5b4D60E6")
 
 	address, tx, instance, err := api.DeployApi(auth, client)
 	if err != nil {
