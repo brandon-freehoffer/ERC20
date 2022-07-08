@@ -21,12 +21,12 @@ import (
 )
 
 func main() {
-	client, err := ethclient.Dial("http://127.0.0.1:8545")
+	client, err := ethclient.Dial("http://127.0.0.1:7545")
 	if err != nil {
 		panic(err)
 	}
 	e := echo.New()
-	tokenAddress := common.HexToAddress("0xfCD7173f13CBC88819A10CB35040a95f99422237")
+	tokenAddress := common.HexToAddress("0x5274222f6856F76C14d8046079DbA79466654c30")
 	instance, err := api.NewApi(tokenAddress, client)
 	if err != nil {
 		log.Fatal(err)
@@ -44,7 +44,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	privateKey, err := crypto.HexToECDSA("22949568e16af0dc75f165a0ad815755ad60737005917c0e9f57738bfd9b3501")
+	privateKey, err := crypto.HexToECDSA("0a0895ec306ed938ac3eb29559bcc9d1a8df59afd909c60bb57f286547873392")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -67,7 +67,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	toAddress := common.HexToAddress("0x22949568e16af0dc75f165a0ad815755ad60737005917c0e9f57738bfd9b3501")
+	toAddress := common.HexToAddress("0x0C4fCeE187bB4889Ff27cDf9ba0D41665300550A")
 
 	transferFnSignature := []byte("transfer(address,uint256)")
 	hash := sha3.NewLegacyKeccak256()
@@ -97,7 +97,10 @@ func main() {
 	}
 	fmt.Printf("\nGas limit: %d", gasLimit)
 
-	tx := types.NewTransaction(nonce, tokenAddress, value, gasLimit, gasPrice, data)
+	fmt.Printf("\nGas price: %d", gasPrice)
+	gasl := uint64(5000000)
+
+	tx := types.NewTransaction(nonce, tokenAddress, value, gasl, gasPrice, data)
 	signedTx, err := types.SignTx(tx, types.HomesteadSigner{}, privateKey)
 	if err != nil {
 		log.Fatal(err)

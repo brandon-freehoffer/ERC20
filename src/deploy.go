@@ -13,14 +13,14 @@ import (
 )
 
 func main() {
-	client, err := ethclient.Dial("http://127.0.0.1:8545")
+	client, err := ethclient.Dial("http://127.0.0.1:7545")
 	if err != nil {
 		fmt.Println(err)
 		panic(err)
 
 	}
 
-	privateKey, err := crypto.HexToECDSA("309418b525980436aee2894f08c54ca009a703ab16d1a2b34f60a4eb177aa922")
+	privateKey, err := crypto.HexToECDSA("0a0895ec306ed938ac3eb29559bcc9d1a8df59afd909c60bb57f286547873392")
 	if err != nil {
 		fmt.Println(err)
 		panic(err)
@@ -49,9 +49,7 @@ func main() {
 		panic(err)
 	}
 	auth.Nonce = big.NewInt(int64(nonce))
-	auth.Value = big.NewInt(0)       // in wei
-	auth.GasLimit = uint64(30000000) // in units
-	auth.GasPrice = big.NewInt(875625000)
+	auth.Value = big.NewInt(0) // in wei
 
 	address, tx, instance, err := api.DeployApi(auth, client)
 	if err != nil {
