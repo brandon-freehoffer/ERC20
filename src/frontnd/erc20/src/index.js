@@ -4,7 +4,10 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { Web3ReactProvider } from '@web3-react/core'
+import { ChakraProvider } from "@chakra-ui/react";
+import { ColorModeScript } from '@chakra-ui/react';
 import { Web3Provider } from "@ethersproject/providers";
+
 
 function getLibrary(provider) {
   return new Web3Provider(provider);
@@ -12,10 +15,13 @@ function getLibrary(provider) {
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
-  <Web3ReactProvider getLibrary={getLibrary}>
-  <App />
-</Web3ReactProvider>,
 
+  <ChakraProvider>
+  
+    <Web3ReactProvider getLibrary={getLibrary}>
+      <App />
+    </Web3ReactProvider>
+  </ChakraProvider>
 );
 
 // If you want to start measuring performance in your app, pass a function
