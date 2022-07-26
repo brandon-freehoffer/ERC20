@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	"net/http"
 
 	"github.com/brandon-freehoffer/ERC20/src/api"
 	"github.com/ethereum/go-ethereum"
@@ -18,6 +19,7 @@ import (
 	"golang.org/x/crypto/sha3"
 
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 func main() {
@@ -26,11 +28,39 @@ func main() {
 		panic(err)
 	}
 	e := echo.New()
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"*"},
+		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
+	}))
 	tokenAddress := common.HexToAddress("0x5274222f6856F76C14d8046079DbA79466654c30")
 	instance, err := api.NewApi(tokenAddress, client)
 	if err != nil {
 		log.Fatal(err)
 	}
+	e.GET("/GetTokenInfo", func(c echo.Context) error {
+		fmt.Println(c.Request())
+		name, err := instance.Name(&bind.CallOpts{})
+		if err != nil {
+			fmt.Printf("Error")
+			return err
+		}
+		symbol, err := instance.Symbol(&bind.CallOpts{})
+		if err != nil {
+			log.Fatal(err)
+		}
+		decimals, err := instance.Decimals(&bind.CallOpts{})
+		if err != nil {
+			log.Fatal(err)
+		}
+		t := &TokenInfo{
+			Name:      name,
+			Symbol:    symbol,
+			Precision: decimals,
+		}
+
+		return c.JSON(http.StatusOK, t) // get name
+
+	})
 	name, err := instance.Name(&bind.CallOpts{})
 	if err != nil {
 		log.Fatal(err)
@@ -115,5 +145,11 @@ func main() {
 	fmt.Printf("\ndecimals: %v\n", decimals)
 	fmt.Printf("\nTokens sent at TX: %s", signedTx.Hash().Hex())
 
-	e.Logger.Fatal(e.Start(":1340"))
+	e.Logger.Fatal(e.Start(":1343"))
+}
+
+type TokenInfo struct {
+	Name      string
+	Symbol    string
+	Precision uint8
 }
