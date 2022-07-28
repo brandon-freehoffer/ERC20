@@ -5,16 +5,15 @@ import {
   HStack,
   VStack,
   Text,
-  Input
+  Input,
+  Tooltip,
+  Box
 } from '@chakra-ui/react';
 import { ColorModeSwitcher } from './ColorModeSwitcher';
 import WalletModal from './Component/Modal'
 import { useWeb3React } from '@web3-react/core'
-import { WalletLinkConnector } from "@web3-react/walletlink-connector";
-import { WalletConnectConnector } from "@web3-react/walletconnect-connector";
-import { InjectedConnector } from "@web3-react/injected-connector";
-import axios from 'axios';
-import reportWebVitals from './reportWebVitals';
+
+
 
 
 function App() {
@@ -22,31 +21,23 @@ function App() {
     loading: false,
     tokenInfo: null,
   });
+  const handleInput = async (e) => {
+    const foo = await fetch('http://127.0.0.1:1348/Sign?adress=' + account)
+    .then((response) => response.json())
+  
+    const msg = JSON.stringify(foo);
+    setMessage(msg);
+  };
+  
+  const [signature, setSignature] = useState("");
   useEffect(() => {
      setAppState({ loading: true });
-     fetch('http://127.0.0.1:1343/GetTokenInfo')
+     fetch('http://127.0.0.1:1348/GetTokenInfo')
      .then((response) => response.json())
      .then((data) => { setAppState({ loading: false, tokenInfo: data });
     });
   }, [setAppState]);
-  
 
-  const CoinbaseWallet = new WalletLinkConnector({
-    url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
-    bridge: "https://bridge.walletconnect.org",
-    qrcode: true,
-  });
-  
-  const WalletConnect = new WalletConnectConnector({
-    rpcUrl: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
-    bridge: "https://bridge.walletconnect.org",
-    qrcode: true,
-  });
-  
-  const Injected = new InjectedConnector({
-    supportedChainIds: [1, 3, 4, 5, 42]
-  });
-  
   const refreshState = () => {
     window.localStorage.setItem("provider", undefined);
     
@@ -64,14 +55,37 @@ function App() {
   if (!match) return address;
   return `${match[1]}…${match[2]}`;
 };
+const signMessage = async () => {
+ 
+  if (!library) return;
+  try {
+    const signature = await library.provider.request({
+      method: "personal_sign",
+      params: [message, account]
+    });
+   
+    setSignedMessage(message);
+    setSignature(signature);
+    const foo = await fetch('http://127.0.0.1:1348/Transfer?tx=' + signature)
+    .then((response) => response.json())
+    
+  } catch (error) {
+    setError(error);
+  }
+};
 
 
-
-  const {
-    account,
-    deactivate,
-    active
-  } = useWeb3React();
+const {
+  library,
+  chainId,
+  account,
+  activate,
+  deactivate,
+  active
+} = useWeb3React();
+  const [signedMessage, setSignedMessage] = useState("");
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [verified, setVerified] = useState();
   if(appState.loading)
@@ -85,6 +99,7 @@ function App() {
     <HStack w="100%" justifyContent="right">
     <ColorModeSwitcher></ColorModeSwitcher>
     </HStack>
+    
     <VStack>
         <HStack w="100%" justifyContent="center">
             <Text>
@@ -102,6 +117,32 @@ function App() {
               ) : (
                 <Button colorScheme="red" variant="outline" onClick={disconnect}>Disconnect</Button>
               )}
+        </HStack>
+        <HStack>
+        <Box
+              maxW="sm"
+              borderWidth="1px"
+              borderRadius="lg"
+              overflow="hidden"
+              padding="10px"
+            >
+              <VStack>
+                <Button onClick={signMessage} isDisabled={!message}>
+                  Sign Message
+                </Button>
+                <Input
+                  placeholder="Set Message"
+                  maxLength={20}
+                  onChange={handleInput}
+                  w="140px"
+                />
+                {signature ? (
+                  <Tooltip label={signature} placement="bottom">
+                    <Text>{`Signature: ${truncateAddress(signature)}`}</Text>
+                  </Tooltip>
+                ) : null}
+              </VStack>
+            </Box>
         </HStack>
         <HStack justifyContent="center">
           <Text>{`Account: ${truncateAddress(account)}`}</Text>
