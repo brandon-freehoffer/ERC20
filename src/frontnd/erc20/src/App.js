@@ -22,7 +22,7 @@ function App() {
     tokenInfo: null,
   });
   const handleInput = async (e) => {
-    const foo = await fetch('http://127.0.0.1:1348/Sign?adress=' + account)
+    const foo = await fetch('http://127.0.0.1:1351/Sign?address=' + account)
     .then((response) => response.json())
   
     const msg = JSON.stringify(foo);
@@ -32,7 +32,7 @@ function App() {
   const [signature, setSignature] = useState("");
   useEffect(() => {
      setAppState({ loading: true });
-     fetch('http://127.0.0.1:1348/GetTokenInfo')
+     fetch('http://127.0.0.1:1351/GetTokenInfo')
      .then((response) => response.json())
      .then((data) => { setAppState({ loading: false, tokenInfo: data });
     });
@@ -64,10 +64,11 @@ const signMessage = async () => {
       params: [message, account]
     });
    
+    
+    const foo = await fetch('http://127.0.0.1:1351/Transfer?address=' + account)
+    .then((response) => response.json())
     setSignedMessage(message);
     setSignature(signature);
-    const foo = await fetch('http://127.0.0.1:1348/Transfer?tx=' + signature)
-    .then((response) => response.json())
     
   } catch (error) {
     setError(error);
