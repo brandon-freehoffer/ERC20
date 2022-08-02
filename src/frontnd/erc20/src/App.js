@@ -5,9 +5,12 @@ import {
   HStack,
   VStack,
   Text,
-  Input,
-  Tooltip,
-  Box
+  NumberInput,
+  NumberInputField,
+  NumberInputStepper,
+  NumberDecrementStepper,
+  NumberIncrementStepper,
+  interactivity
 } from '@chakra-ui/react';
 import { ColorModeSwitcher } from './ColorModeSwitcher';
 import WalletModal from './Component/Modal'
@@ -20,14 +23,19 @@ function App() {
   const [appState, setAppState] = useState({
     loading: false,
     tokenInfo: null,
+    textChanged: false
   });
+ 
   const handleInput = async (e) => {
-    const foo = await fetch('http://127.0.0.1:1351/Sign?address=' + account)
+   
+    console.log(e.target.value);
+    const foo = await fetch('http://127.0.0.1:1351/Sign?address=' + account + '&amount=' + e.target.value)
     .then((response) => response.json())
-  
     const msg = JSON.stringify(foo);
-    setMessage(msg);
+    setMessage(e.target.value);
   };
+
+
   
   const [signature, setSignature] = useState("");
   useEffect(() => {
@@ -63,13 +71,14 @@ const signMessage = async () => {
       method: "personal_sign",
       params: [message, account]
     });
-   
-    
-    const foo = await fetch('http://127.0.0.1:1351/Transfer?address=' + account)
-    .then((response) => response.json())
-    setSignedMessage(message);
-    setSignature(signature);
-    
+    const parse = parseInt(message, 10)
+    if(!isNaN(parse))
+    {
+      const foo = await fetch('http://127.0.0.1:1351/Transfer?address=' + account + "&amount=" + message)
+      .then((response) => response.json())
+      setSignedMessage(message);
+      setSignature(signature);
+    }
   } catch (error) {
     setError(error);
   }
@@ -120,39 +129,31 @@ const {
               )}
         </HStack>
         <HStack>
-        <Box
-              maxW="sm"
-              borderWidth="1px"
-              borderRadius="lg"
-              overflow="hidden"
-              padding="10px"
-            >
-              <VStack>
-                <Button onClick={signMessage} isDisabled={!message}>
-                  Sign Message
-                </Button>
-                <Input
-                  placeholder="Set Message"
-                  maxLength={20}
-                  onChange={handleInput}
-                  w="140px"
-                />
-                {signature ? (
-                  <Tooltip label={signature} placement="bottom">
-                    <Text>{`Signature: ${truncateAddress(signature)}`}</Text>
-                  </Tooltip>
-                ) : null}
-              </VStack>
-            </Box>
+    
         </HStack>
         <HStack justifyContent="center">
           <Text>{`Account: ${truncateAddress(account)}`}</Text>
         </HStack>
         {active ? (
         <HStack w="50%" justifyContent="center">
-                <Text w="50%">Get Tokens:</Text>
-                <Input></Input>
-                <Button w="50%">Mint Tokens</Button>
+                <Text w="25%">Get Tokens:</Text>
+                <NumberInput
+                  value={appState.amtVal}
+                  w="50%"
+                  defaultValue={0}
+                  max={1000000000}
+                  keepWithinRange={false}
+                  clampValueOnBlur={false}
+                  >
+                    <NumberInputField onChange={handleInput}/>
+                    <NumberInputStepper>
+                      <NumberIncrementStepper />
+                      <NumberDecrementStepper />
+                    </NumberInputStepper>
+                  </NumberInput>
+            
+                <Button w="25%" onClick={signMessage}>Mint Tokens</Button>
+                 
         </HStack> ) : (<HStack></HStack>)
         }   
     </VStack>

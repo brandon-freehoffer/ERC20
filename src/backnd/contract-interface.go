@@ -7,6 +7,7 @@ import (
 	"log"
 	"math/big"
 	"net/http"
+	"strconv"
 
 	"github.com/brandon-freehoffer/ERC20/src/api"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -35,30 +36,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	e.GET("/GetTokenInfo", func(c echo.Context) error {
-		fmt.Println(c.Request())
-		name, err := instance.Name(&bind.CallOpts{})
-		if err != nil {
-			fmt.Printf("Error")
-			return err
-		}
-		symbol, err := instance.Symbol(&bind.CallOpts{})
-		if err != nil {
-			log.Fatal(err)
-		}
-		decimals, err := instance.Decimals(&bind.CallOpts{})
-		if err != nil {
-			log.Fatal(err)
-		}
-		t := &TokenInfo{
-			Name:      name,
-			Symbol:    symbol,
-			Precision: decimals,
-		}
 
-		return c.JSON(http.StatusOK, t) // get name
-
-	})
 	name, err := instance.Name(&bind.CallOpts{})
 	if err != nil {
 		log.Fatal(err)
@@ -85,30 +63,35 @@ func main() {
 
 	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
 
-	toAddress := common.HexToAddress("0x0C4fCeE187bB4889Ff27cDf9ba0D41665300550A")
+	e.GET("/GetTokenInfo", func(c echo.Context) error {
+		fmt.Println(c.Request())
+		name, err := instance.Name(&bind.CallOpts{})
+		if err != nil {
+			fmt.Printf("Error")
+			return err
+		}
+		symbol, err := instance.Symbol(&bind.CallOpts{})
+		if err != nil {
+			log.Fatal(err)
+		}
+		decimals, err := instance.Decimals(&bind.CallOpts{})
+		if err != nil {
+			log.Fatal(err)
+		}
+		t := &TokenInfo{
+			Name:      name,
+			Symbol:    symbol,
+			Precision: decimals,
+		}
 
-	transferFnSignature := []byte("transfer(address,uint256)")
-	hash := sha3.NewLegacyKeccak256()
-	hash.Write(transferFnSignature)
-	methodID := hash.Sum(nil)[:4]
-	fmt.Printf("\nMethod ID: %s\n", hexutil.Encode(methodID))
+		return c.JSON(http.StatusOK, t) // get name
 
-	paddedAddress := common.LeftPadBytes(toAddress.Bytes(), 32)
-	fmt.Printf("\nTo address: %s\n", hexutil.Encode(paddedAddress))
-
-	amount := new(big.Int)
-	amount.SetString("1000000000000000000000", 10) // 1000 tokens
-	paddedAmount := common.LeftPadBytes(amount.Bytes(), 32)
-	fmt.Printf("\nToken amount: %s", hexutil.Encode(paddedAmount))
-
-	var data []byte
-	data = append(data, methodID...)
-	data = append(data, paddedAddress...)
-	data = append(data, paddedAmount...)
-
+	})
 	e.GET("/Sign", func(c echo.Context) error {
 
-		add := c.QueryParam("adress")
+		add := c.QueryParam("address")
+		amt := c.QueryParam("amount")
+		fmt.Println(amt)
 		fmt.Println("add: " + add)
 		toAddress := common.HexToAddress(add)
 		transferFnSignature := []byte("transfer(address,uint256)")
@@ -119,9 +102,14 @@ func main() {
 
 		paddedAddress := common.LeftPadBytes(toAddress.Bytes(), 32)
 		fmt.Printf("\nTo address: %s\n", hexutil.Encode(paddedAddress))
+		i, err := strconv.ParseInt(amt, 10, 64)
+		if err != nil {
+			// ... handle error
+			panic(err)
+		}
+		amount := new(big.Int).Exp(big.NewInt(i), big.NewInt(18), nil)
 
-		amount := new(big.Int)
-		amount.SetString("1000000000000000000000", 10) // 1000 tokens
+		fmt.Printf(amount.String())
 		paddedAmount := common.LeftPadBytes(amount.Bytes(), 32)
 		nonce, err := client.PendingNonceAt(context.Background(), fromAddress)
 		if err != nil {
@@ -147,7 +135,7 @@ func main() {
 
 	e.GET("/Transfer", func(c echo.Context) error {
 		add := c.QueryParam("address")
-
+		amt := c.QueryParam("amount")
 		toAddress := common.HexToAddress(add)
 		transferFnSignature := []byte("transfer(address,uint256)")
 		hash := sha3.NewLegacyKeccak256()
@@ -158,9 +146,16 @@ func main() {
 		paddedAddress := common.LeftPadBytes(toAddress.Bytes(), 32)
 		fmt.Printf("\nTo address: %s\n", hexutil.Encode(paddedAddress))
 
-		amount := new(big.Int)
-		amount.SetString("1000000000000000000000", 10) // 1000 tokens
-		paddedAmount := common.LeftPadBytes(amount.Bytes(), 32)
+		wei := new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil)
+		tokenAmt := new(big.Int)
+		tokenAmt, ok := new(big.Int).SetString(amt, 10)
+		if !ok {
+			panic(ok)
+		}
+
+		total := new(big.Int).Mul(tokenAmt, wei)
+
+		paddedAmount := common.LeftPadBytes(total.Bytes(), 32)
 		nonce, err := client.PendingNonceAt(context.Background(), fromAddress)
 		if err != nil {
 			log.Fatal(err)
